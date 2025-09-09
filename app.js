@@ -13,7 +13,7 @@ class AIInterviewSystem {
         this.interviewTimer = null;
         
         // Groq API configuration (replace with your API key)
-        this.groqApiKey =  import.meta.env.GROQ; // Replace with actual API key
+        this.groqApiKey =  process.env.GROQ; // Replace with actual API key
         this.groqEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
         
         this.initializeApp();
