@@ -3,7 +3,7 @@ import MultiStepForm from "./components/MultiStepForm";
 import AIQuestions from "./components/AIQuestions";
 import LiveInterview from "./components/LiveInterview";
 import AssessmentResults from "./components/AssessmentResults";
-
+import './styles/index.css';
 export default function App() {
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState(null);
