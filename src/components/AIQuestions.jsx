@@ -11,9 +11,10 @@ export default function AIQuestions({ profile, onFinish }) {
   useEffect(() => {
     async function getQuestions() {
       setLoading(true);
-      const prompt = `Generate 7 interview questions for a ${profile.jobTitle} with ${profile.experience} years. Skills: ${profile.skills}. Format: [{"question":...}]`;
+      const prompt = `Generate 4 to 7 interview questions for a ${profile.jobTitle} with ${profile.experience} years. Skills: ${profile.skills}. No PREAMBLE ###Format: [{"question":...}]`;
       try {
         const res = await groqChat(prompt, profile.apiKey);
+        console.log(res)
         const parsed = JSON.parse(res);
         setQuestions(parsed.map((q, i) => ({ id: i, text: q.question })));
         setLoading(false);
