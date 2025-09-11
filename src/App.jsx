@@ -29,19 +29,11 @@ export default function App() {
     setLoadingAssessment(true);
     try {
       const prompt = `
-Please ONLY reply with a valid JSON object (no extra text) with this format:
+Please respond ONLY with a valid JSON object adhering exactly to the format below (no extra text or commentary):
 
-{
-  "scores": {
-    "technical": <number>,
-    "communication": <number>,
-    "problemSolving": <number>,
-    "experience": <number>,
-    "culturalFit": <number>,
-    "overall": <number>
-  },
-  "feedback": "<string>"
-}
+{ "scores": { "technical": 0-100, "communication": 0-100, "problemSolving": 0-100, "experience": 0-100, "culturalFit": 0-100, "overall": 0-100 }, "feedback": "Detailed feedback on the candidate's performance." }
+
+Assess the following interview for the position of Software Engineer:
 
 Assess this interview for a ${profile.jobTitle} position:
 Candidate Profile: ${JSON.stringify(profile)}
