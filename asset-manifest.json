@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/static/css/main.b5c8f2cb.css",
-    "main.js": "/static/js/main.01b2bb96.js",
-    "index.html": "/index.html",
-    "main.b5c8f2cb.css.map": "/static/css/main.b5c8f2cb.css.map",
-    "main.01b2bb96.js.map": "/static/js/main.01b2bb96.js.map"
+    "main.css": "/InterviewAI/static/css/main.b5c8f2cb.css",
+    "main.js": "/InterviewAI/static/js/main.01b2bb96.js",
+    "index.html": "/InterviewAI/index.html",
+    "main.b5c8f2cb.css.map": "/InterviewAI/static/css/main.b5c8f2cb.css.map",
+    "main.01b2bb96.js.map": "/InterviewAI/static/js/main.01b2bb96.js.map"
   },
   "entrypoints": [
     "static/css/main.b5c8f2cb.css",
