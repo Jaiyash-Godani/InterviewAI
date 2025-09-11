@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 import { groqChat } from "../api";
@@ -54,17 +55,14 @@ export default function LiveInterview({ profile, onFinish }) {
     setLoading(true);
     setMessages(msg => [...msg, { sender: "user", text }]);
     setStatus("AI is thinking...");
-
     const history = messages
       .map(m => (m.sender === "ai" ? `Interviewer: ${m.text}` : `You: ${m.text}`))
       .slice(-6)
       .join("\n");
-
     const prompt = `You are an interviewer for a ${profile.jobTitle}. Profile: ${JSON.stringify(
       profile
     )}. Last turns: ${history}. Candidate just said: "${text}". 
 Respond as a human interviewer, ask relevant questions, probe projects and experience, act conversational and professional (2-3 sentences) NO PREAMBLE.`;
-
     try {
       const aiReply = await groqChat(prompt, profile.apiKey);
       setMessages(msg => [...msg, { sender: "ai", text: aiReply }]);
