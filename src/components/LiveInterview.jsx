@@ -15,10 +15,11 @@ export default function LiveInterview({ profile, onFinish }) {
 
   function handleRecordClick() {
     resetTranscript();
-    SpeechRecognition.startListening({
-      continuous: false,
-      language: "en-US"
-    });
+SpeechRecognition.startListening({
+  continuous: true,
+  language: "en-US"
+});
+
     setStatus("Listening...");
   }
 
