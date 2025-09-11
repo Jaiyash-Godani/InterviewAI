@@ -43,7 +43,8 @@ export default function App() {
       NO PREAMBLE
 
       Provide a JSON response with scores for Technical Skills, Communication, Problem Solving, Experience Relevance, Cultural Fit, Overall Rating (0-100) and detailed feedback.
-format:{
+
+this is format {
   "scores": {
     "technical":
     "communication":
@@ -54,7 +55,7 @@ format:{
   },
   "feedback": 
 }
-
+No json remark its an api that calls you so be a valid json
       `;
 
       const apiResponse = await groqChat(prompt, profile.apiKey);
