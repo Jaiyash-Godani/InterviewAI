@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import useSpeechRecognition from "react-speech-recognition";
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 import { groqChat } from "../api";
 
 export default function LiveInterview({ profile, onFinish }) {
@@ -7,57 +7,30 @@ export default function LiveInterview({ profile, onFinish }) {
     { sender: "ai", text: "Hello! I'm your AI interviewer. Please introduce yourself." }
   ]);
   const [status, setStatus] = useState("Ready");
-  const [recording, setRecording] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const { transcript, resetTranscript, listening, startListening, stopListening } =
-    useSpeechRecognition();
-
   const synthRef = useRef(window.speechSynthesis);
 
-  async function handleUserSend(text) {
-    setLoading(true);
-    setMessages(msg => [...msg, { sender: "user", text }]);
-    setStatus("AI is thinking...");
-
-    // Gather last few turns for context
-    const history = messages
-      .map(m => m.sender === "ai" ? `Interviewer: ${m.text}` : `You: ${m.text}`)
-      .slice(-6)
-      .join("\n");
-
-    const prompt = `You are an interviewer for a ${profile.jobTitle}. Profile: ${JSON.stringify(profile)}. Last turns: ${history}. Candidate just said: "${text}". 
-Respond as a human interviewer, ask relevant questions, probe projects and experience, act conversational and professional (2-3 sentences).`;
-
-    // Get groq response
-    try {
-      const aiReply = await groqChat(prompt, profile.apiKey);
-      setMessages(msg => [...msg, { sender: "ai", text: aiReply }]);
-      setLoading(false);
-      setStatus("Ready");
-      speak(aiReply);
-      resetTranscript();
-    } catch {
-      setMessages(msg => [...msg, { sender: "ai", text: "Sorry, couldn't get a response." }]);
-      setLoading(false);
-      setStatus("Ready");
-      resetTranscript();
-    }
-  }
+  const {
+    transcript,
+    resetTranscript,
+    listening
+  } = useSpeechRecognition();
 
   function handleRecordClick() {
-    startListening({ continuous: true, language: "en-US" });
-    setRecording(true);
+    SpeechRecognition.startListening({
+      continuous: true,
+      language: "en-US"
+    });
     setStatus("Listening...");
   }
+
   function handleStopClick() {
-    stopListening();
-    setRecording(false);
+    SpeechRecognition.stopListening();
     setStatus("Processing...");
     if (transcript.trim()) {
       handleUserSend(transcript);
+      resetTranscript();
     }
-    resetTranscript();
   }
 
   function speak(text) {
@@ -66,6 +39,32 @@ Respond as a human interviewer, ask relevant questions, probe projects and exper
     utter.pitch = 1;
     utter.volume = 0.9;
     synthRef.current.speak(utter);
+  }
+
+  async function handleUserSend(text) {
+    setLoading(true);
+    setMessages(msg => [...msg, { sender: "user", text }]);
+    setStatus("AI is thinking...");
+
+    const history = [...messages, { sender: "user", text }]
+      .map(m => m.sender === "ai" ? `Interviewer: ${m.text}` : `You: ${m.text}`)
+      .slice(-6)
+      .join("\n");
+
+    const prompt = `You are an interviewer for a ${profile.jobTitle}. Profile: ${JSON.stringify(profile)}. Last turns: ${history}. Candidate just said: "${text}". 
+Respond as a human interviewer, ask relevant questions, probe projects and experience, act conversational and professional (2-3 sentences) NO PREAMBLE.`;
+
+    try {
+      const aiReply = await groqChat(prompt, profile.apiKey);
+      setMessages(msg => [...msg, { sender: "ai", text: aiReply }]);
+      setLoading(false);
+      setStatus("Ready");
+      speak(aiReply);
+    } catch {
+      setMessages(msg => [...msg, { sender: "ai", text: "Sorry, couldn't get a response." }]);
+      setLoading(false);
+      setStatus("Ready");
+    }
   }
 
   function handleEnd() {
@@ -89,12 +88,12 @@ Respond as a human interviewer, ask relevant questions, probe projects and exper
           )}
         </div>
         <div className="flex space-x-4 justify-center">
-          {recording ? (
-            <button className="bg-red-600 text-white px-6 py-3 rounded-lg" onClick={handleStopClick}>⏹️ Stop</button>
-          ) : (
+          {!listening ? (
             <button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg" onClick={handleRecordClick}>
               🎤 Start Speaking
             </button>
+          ) : (
+            <button className="bg-red-600 text-white px-6 py-3 rounded-lg" onClick={handleStopClick}>⏹️ Stop</button>
           )}
           <button className="bg-green-700 text-white px-6 py-3 rounded-lg" onClick={handleEnd}>End Interview →</button>
         </div>
