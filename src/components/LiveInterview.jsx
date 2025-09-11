@@ -8,6 +8,7 @@ export default function LiveInterview({ profile, onFinish }) {
   ]);
   const [status, setStatus] = useState("Ready");
   const [loading, setLoading] = useState(false);
+  const [lastUserAnswer, setLastUserAnswer] = useState("");
   const synthRef = useRef(window.speechSynthesis);
 
   const {
@@ -16,21 +17,47 @@ export default function LiveInterview({ profile, onFinish }) {
     listening
   } = useSpeechRecognition();
 
+  // Start or restart recording to capture just one answer
   function handleRecordClick() {
+    resetTranscript();      // clear transcript for fresh capture
     SpeechRecognition.startListening({
-      continuous: true,
+      continuous: false,   // single answer capture only
       language: "en-US"
     });
     setStatus("Listening...");
   }
 
+  // Stop listening and send captured answer
   function handleStopClick() {
     SpeechRecognition.stopListening();
     setStatus("Processing...");
     if (transcript.trim()) {
-      handleUserSend(transcript);
+      setLastUserAnswer(transcript.trim());
+      handleUserSend(transcript.trim());
       resetTranscript();
     }
+  }
+
+  // Re-record last answer, removing previous user answer from chat
+  function handleRerecordClick() {
+    // Remove last user message from messages array before re-recording
+    setMessages(prevMsgs => {
+      const newMsgs = [...prevMsgs];
+      for (let i = newMsgs.length - 1; i >= 0; i--) {
+        if (newMsgs[i].sender === "user") {
+          newMsgs.splice(i, 1);
+          break;
+        }
+      }
+      return newMsgs;
+    });
+    setLastUserAnswer("");
+    resetTranscript();
+    SpeechRecognition.startListening({
+      continuous: false,
+      language: "en-US"
+    });
+    setStatus("Re-recording...");
   }
 
   function speak(text) {
@@ -46,13 +73,16 @@ export default function LiveInterview({ profile, onFinish }) {
     setMessages(msg => [...msg, { sender: "user", text }]);
     setStatus("AI is thinking...");
 
-    const history = [...messages, { sender: "user", text }]
+    // Compose last 6 messages excluding last user answer (which is only just sent now)
+    // The chat history includes all msgs including user previous answers visible on chat
+    const history = messages
       .map(m => m.sender === "ai" ? `Interviewer: ${m.text}` : `You: ${m.text}`)
       .slice(-6)
       .join("\n");
 
-    const prompt = `You are an interviewer for a ${profile.jobTitle}. Profile: ${JSON.stringify(profile)}. Last turns: ${history}. Candidate just said: "${text}". 
-Respond as a human interviewer, ask relevant questions, probe projects and experience, act conversational and professional (2-3 sentences) NO PREAMBLE.`;
+    // Append current user input (not in transcript view but included in chat history)
+    // So to avoid duplication, use messages + last user input in prompt
+    const prompt = `You are an interviewer for a ${profile.jobTitle}. Profile: ${JSON.stringify(profile)}. Last turns: ${history}\nYou: ${text}\nRespond as a human interviewer, ask relevant questions, probe projects and experience, act conversational and professional (2-3 sentences) NO PREAMBLE.`;
 
     try {
       const aiReply = await groqChat(prompt, profile.apiKey);
@@ -83,21 +113,31 @@ Respond as a human interviewer, ask relevant questions, probe projects and exper
               </div>
             </div>
           ))}
+          {/* Only show current live transcript, no past user answers */}
           {listening && (
             <div className="text-green-400 text-center mt-2">(Listening...) Transcript: {transcript}</div>
           )}
         </div>
         <div className="flex space-x-4 justify-center">
           {!listening ? (
-            <button className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg" onClick={handleRecordClick}>
-              🎤 Start Speaking
+            <button
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg"
+              onClick={lastUserAnswer ? handleRerecordClick : handleRecordClick}
+            >
+              {lastUserAnswer ? "🔄 Re-record Last Answer" : "🎤 Start Speaking"}
             </button>
           ) : (
-            <button className="bg-red-600 text-white px-6 py-3 rounded-lg" onClick={handleStopClick}>⏹️ Stop</button>
+            <button className="bg-red-600 text-white px-6 py-3 rounded-lg" onClick={handleStopClick}>
+              ⏹️ Stop
+            </button>
           )}
-          <button className="bg-green-700 text-white px-6 py-3 rounded-lg" onClick={handleEnd}>End Interview →</button>
+          <button className="bg-green-700 text-white px-6 py-3 rounded-lg" onClick={handleEnd}>
+            End Interview →
+          </button>
         </div>
-        <div className="mt-4 text-center text-white opacity-75"><span>Status:</span> {status}{loading && "..."}</div>
+        <div className="mt-4 text-center text-white opacity-75">
+          <span>Status:</span> {status}{loading && "..."}
+        </div>
       </div>
     </div>
   );
