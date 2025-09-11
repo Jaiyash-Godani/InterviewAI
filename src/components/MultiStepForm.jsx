@@ -36,7 +36,7 @@ export default function MultiStepForm({ onSubmit }) {
         <input className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-gray-300 focus:ring-2 focus:ring-blue-500"
           name="jobTitle" placeholder="Job Title" value={form.jobTitle} onChange={handleChange} required />
         <select 
-          className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-black focus:ring-2 focus:ring-blue-500"
           name="experience" value={form.experience} onChange={handleChange} required
         >
           <option value="">Years of Experience</option>
