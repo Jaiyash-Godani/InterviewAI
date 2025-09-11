@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Chart, ArcElement, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
+import { Chart,DoughnutController, ArcElement, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
 
-Chart.register(ArcElement, BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+Chart.register(ArcElement, DoughnutController,BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 export default function AssessmentResults({ assessment, onRestart }) {
   const overallChartRef = useRef(null);
