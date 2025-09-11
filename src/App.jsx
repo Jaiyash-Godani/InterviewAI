@@ -55,7 +55,7 @@ this is format {
   },
   "feedback": 
 }
-No json remark its an api that calls you so be a valid json
+###No json remark its an api that calls you so be a valid json that directly can be stored 
       `;
 
       const apiResponse = await groqChat(prompt, profile.apiKey);
