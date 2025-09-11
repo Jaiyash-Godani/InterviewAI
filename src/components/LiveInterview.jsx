@@ -8,50 +8,32 @@ export default function LiveInterview({ profile, onFinish }) {
   ]);
   const [status, setStatus] = useState("Ready");
   const [loading, setLoading] = useState(false);
-  const [lastUserAnswer, setLastUserAnswer] = useState("");
   const synthRef = useRef(window.speechSynthesis);
 
-  const {
-    transcript,
-    resetTranscript,
-    listening
-  } = useSpeechRecognition();
+  const { transcript, resetTranscript, listening } = useSpeechRecognition();
 
-  // Start or restart recording to capture just one answer
   function handleRecordClick() {
-    resetTranscript();      // clear transcript for fresh capture
+    resetTranscript();
     SpeechRecognition.startListening({
-      continuous: false,   // single answer capture only
+      continuous: false,
       language: "en-US"
     });
     setStatus("Listening...");
   }
 
-  // Stop listening and send captured answer
-  function handleStopClick() {
+  async function handleStopClick() {
     SpeechRecognition.stopListening();
     setStatus("Processing...");
     if (transcript.trim()) {
-      setLastUserAnswer(transcript.trim());
-      handleUserSend(transcript.trim());
+      await handleUserSend(transcript.trim());
       resetTranscript();
+    } else {
+      setStatus("Ready");
     }
   }
 
-  // Re-record last answer, removing previous user answer from chat
+  // Clears current transcript, lets user speak again without sending answer
   function handleRerecordClick() {
-    // Remove last user message from messages array before re-recording
-    setMessages(prevMsgs => {
-      const newMsgs = [...prevMsgs];
-      for (let i = newMsgs.length - 1; i >= 0; i--) {
-        if (newMsgs[i].sender === "user") {
-          newMsgs.splice(i, 1);
-          break;
-        }
-      }
-      return newMsgs;
-    });
-    setLastUserAnswer("");
     resetTranscript();
     SpeechRecognition.startListening({
       continuous: false,
@@ -73,16 +55,15 @@ export default function LiveInterview({ profile, onFinish }) {
     setMessages(msg => [...msg, { sender: "user", text }]);
     setStatus("AI is thinking...");
 
-    // Compose last 6 messages excluding last user answer (which is only just sent now)
-    // The chat history includes all msgs including user previous answers visible on chat
     const history = messages
-      .map(m => m.sender === "ai" ? `Interviewer: ${m.text}` : `You: ${m.text}`)
+      .map(m => (m.sender === "ai" ? `Interviewer: ${m.text}` : `You: ${m.text}`))
       .slice(-6)
       .join("\n");
 
-    // Append current user input (not in transcript view but included in chat history)
-    // So to avoid duplication, use messages + last user input in prompt
-    const prompt = `You are an interviewer for a ${profile.jobTitle}. Profile: ${JSON.stringify(profile)}. Last turns: ${history}\nYou: ${text}\nRespond as a human interviewer, ask relevant questions, probe projects and experience, act conversational and professional (2-3 sentences) NO PREAMBLE.`;
+    const prompt = `You are an interviewer for a ${profile.jobTitle}. Profile: ${JSON.stringify(
+      profile
+    )}. Last turns: ${history}. Candidate just said: "${text}". 
+Respond as a human interviewer, ask relevant questions, probe projects and experience, act conversational and professional (2-3 sentences) NO PREAMBLE.`;
 
     try {
       const aiReply = await groqChat(prompt, profile.apiKey);
@@ -108,35 +89,49 @@ export default function LiveInterview({ profile, onFinish }) {
         <div className="h-64 overflow-y-auto bg-white bg-opacity-20 rounded-lg p-4 mb-4 shadow">
           {messages.map((m, i) => (
             <div key={i} className={`mb-3 text-white ${m.sender === "ai" ? "text-left" : "text-right"}`}>
-              <div className={`inline-block px-4 py-2 rounded-lg ${m.sender === "ai" ? "bg-blue-600 bg-opacity-70" : "bg-pink-500 bg-opacity-70"}`}>
+              <div
+                className={`inline-block px-4 py-2 rounded-lg ${
+                  m.sender === "ai" ? "bg-blue-600 bg-opacity-70" : "bg-pink-500 bg-opacity-70"
+                }`}
+              >
                 {m.text}
               </div>
             </div>
           ))}
-          {/* Only show current live transcript, no past user answers */}
           {listening && (
             <div className="text-green-400 text-center mt-2">(Listening...) Transcript: {transcript}</div>
           )}
         </div>
         <div className="flex space-x-4 justify-center">
           {!listening ? (
-            <button
-              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg"
-              onClick={lastUserAnswer ? handleRerecordClick : handleRecordClick}
-            >
-              {lastUserAnswer ? "🔄 Re-record Last Answer" : "🎤 Start Speaking"}
-            </button>
+            <>
+              <button
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg"
+                onClick={handleRecordClick}
+              >
+                🎤 Start Speaking
+              </button>
+              <button className="bg-green-700 text-white px-6 py-3 rounded-lg" onClick={handleEnd}>
+                End Interview →
+              </button>
+            </>
           ) : (
-            <button className="bg-red-600 text-white px-6 py-3 rounded-lg" onClick={handleStopClick}>
-              ⏹️ Stop
-            </button>
+            <>
+              <button className="bg-red-600 text-white px-6 py-3 rounded-lg" onClick={handleStopClick}>
+                ⏹️ Stop
+              </button>
+              <button
+                className="bg-yellow-500 text-white px-6 py-3 rounded-lg"
+                onClick={handleRerecordClick}
+              >
+                🔄 Re-record
+              </button>
+            </>
           )}
-          <button className="bg-green-700 text-white px-6 py-3 rounded-lg" onClick={handleEnd}>
-            End Interview →
-          </button>
         </div>
         <div className="mt-4 text-center text-white opacity-75">
-          <span>Status:</span> {status}{loading && "..."}
+          <span>Status:</span> {status}
+          {loading && "..."}
         </div>
       </div>
     </div>
