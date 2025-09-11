@@ -26,45 +26,44 @@ export default function App() {
 
   async function handleLiveInterviewFinish(liveData) {
     setLiveInterviewData(liveData);
-
-    // Combine data for final assessment prompt
     setLoadingAssessment(true);
     try {
       const prompt = `
-      ###No json remark its an api that calls you so be a valid json {}
-      Assess this interview for a ${profile.jobTitle} position:
+Please ONLY reply with a valid JSON object (no extra text) with this format:
 
-      Candidate Profile: ${JSON.stringify(profile)}
-
-      Written Answers:
-      ${answersData.questions.map((q, i) => `Q${i + 1}: ${q.text}\nA: ${answersData.answers[q.id] || "No answer"}`).join("\n\n")}
-
-      Live Interview Transcript:
-      ${liveData.map(m => `${m.sender === "ai" ? "Interviewer" : "Candidate"}: ${m.text}`).join("\n")}
-      NO PREAMBLE
-
-      Provide a JSON response with scores for Technical Skills, Communication, Problem Solving, Experience Relevance, Cultural Fit, Overall Rating (0-100) and detailed feedback.
-
-this is format {
+{
   "scores": {
-    "technical":
-    "communication":
-    "problemSolving":
-    "experience":
-    "culturalFit":
-    "overall":
+    "technical": <number>,
+    "communication": <number>,
+    "problemSolving": <number>,
+    "experience": <number>,
+    "culturalFit": <number>,
+    "overall": <number>
   },
-  "feedback": 
+  "feedback": "<string>"
 }
 
-      `;
+Assess this interview for a ${profile.jobTitle} position:
+Candidate Profile: ${JSON.stringify(profile)}
+
+Written Answers:
+${answersData.questions.map((q, i) => `Q${i + 1}: ${q.text}\nA: ${answersData.answers[q.id] || "No answer"}`).join("\n\n")}
+
+Live Interview Transcript:
+${liveData.map(m => `${m.sender === "ai" ? "Interviewer" : "Candidate"}: ${m.text}`).join("\n")}
+NO PREAMBLE OR EXTRA TEXT
+`;
 
       const apiResponse = await groqChat(prompt, profile.apiKey);
-      const parsed = JSON.parse(apiResponse);
+
+      // Extract JSON string from API response if wrapped in extra text or code blocks
+      const jsonStringMatch = apiResponse.match(/\{[\s\S]*\}/);
+      if (!jsonStringMatch) throw new Error("No JSON found in API response");
+
+      const parsed = JSON.parse(jsonStringMatch[0]);
       setAssessmentData(parsed);
     } catch (error) {
       console.error("Error fetching assessment:", error);
-      // Fallback or empty state
       setAssessmentData(null);
     }
     setLoadingAssessment(false);
